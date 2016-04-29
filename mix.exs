@@ -22,7 +22,7 @@ defmodule HedwigSlack.Mixfile do
   defp deps do
     [{:connection, "~> 1.0"},
      {:gun, "1.0.0-pre.1"},
-     {:hedwig, github: "hedwig-im/hedwig"},
+     {:hedwig, git: "https://github.com/keathley/hedwig"},
      {:poison, "~> 2.0"}]
   end
 

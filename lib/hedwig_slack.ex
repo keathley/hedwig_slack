@@ -45,7 +45,52 @@ defmodule Hedwig.Adapters.Slack do
     {:noreply, %{state | channels: channels}}
   end
 
-  def handle_info(%{"type" => "message", "user" => user} = msg, %{conn: conn, robot: robot, users: users} = state) do
+  def handle_info(%{"type" => "file_shared", "file" => file} = msg, %{robot: robot, users: users}=state) do
+    IO.puts "I got the file"
+    IO.inspect(file)
+
+    title = file["title"]
+    url = file["url_private_download"]
+    user = file["user"]
+    room = room(file)
+
+    msg = %Hedwig.Message{
+      ref: make_ref(),
+      room: room,
+      text: "file - #{title}",
+      type: "message",
+      user: %Hedwig.User{
+        id: user,
+        name: users[user]["name"]
+      },
+      private: %{
+        url: url
+      }
+    }
+
+    IO.inspect(msg)
+    IO.inspect(robot)
+
+    Hedwig.Robot.handle_message(robot, msg)
+
+    {:noreply, state}
+  end
+
+  def room(file) do
+    channels = file["channels"]
+    groups = file["groups"]
+    ims = file["ims"]
+
+    cond do
+      Enum.count(ims) > 0 -> hd(ims)
+      Enum.count(groups) > 0 -> hd(groups)
+      Enum.count(channels) > 0 -> hd(channels)
+      true -> nil
+    end
+  end
+
+
+  def handle_info(%{"type" => "message", "user" => user} = msg, %{robot: robot, users: users} = state) do
     msg = %Hedwig.Message{
       ref: make_ref(),
       room: msg["channel"],
@@ -56,6 +101,9 @@ defmodule Hedwig.Adapters.Slack do
         name: users[user]["name"]
       }
     }
+
+    IO.puts "Getting message"
+    IO.inspect(msg)
 
     if msg.text do
       Hedwig.Robot.handle_message(robot, msg)
